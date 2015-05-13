@@ -12,6 +12,7 @@
 #include "TQInterface.h"
 #include "BaseTask.h"
 #include <list>
+#include <map>
 #include <vector>
 #include "threadpp/threadpp.h"
 
@@ -21,12 +22,6 @@ namespace tq
     
     class ThreadTaskQueue:public IQueue
     {
-    private:
-        std::list<ITask*> _tasklist;
-        std::vector<QueueRunnable*> _threads;
-        threadpp::recursivelock _mutex;
-        bool _started;
-        bool _suspended;
     public:
         ThreadTaskQueue();
         
@@ -49,6 +44,10 @@ namespace tq
         void Suspend();
         
         void Resume();
+
+        void SetTaskRecycler(TaskCategory cat, TaskRecycler recycler,void *context);
+
+        void ClearTaskRecycler(TaskCategory cat);
         
         ~ThreadTaskQueue();
         
@@ -61,8 +60,25 @@ namespace tq
         void NotifyQueue();
         
         ITask* NextTask();
+
+        void FinishTask(ITask* task);
         
         friend class QueueRunnable;
+
+    private:
+        struct RecyclerPair
+        {
+            TaskRecycler recycler;
+            void *context;
+        };
+
+        std::map<TaskCategory,RecyclerPair> _recyclers;
+        std::list<ITask*> _tasklist;
+        std::vector<QueueRunnable*> _threads;
+        threadpp::recursivelock _mutex;
+        threadpp::lock _recyclerMutex;
+        bool _started;
+        bool _suspended;
     };
 }
 

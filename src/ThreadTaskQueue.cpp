@@ -48,7 +48,7 @@ namespace tq{
             task->Run();
             queue->LockQueue();
             currentTask = NULL;
-            delete task;
+            queue->FinishTask(task);
             queue->NotifyQueue();
             queue->UnlockQueue();
         }
@@ -69,7 +69,7 @@ namespace tq{
         return currentTask != NULL;
     }
     
-    ThreadTaskQueue::ThreadTaskQueue():_tasklist(),_mutex(),_started(false),_suspended(false),_threads()
+    ThreadTaskQueue::ThreadTaskQueue():_tasklist(),_started(false),_suspended(false)
     {
         
     }
@@ -215,7 +215,7 @@ namespace tq{
     
     ITask* ThreadTaskQueue::NextTask()
     {
-        while (_started && (_tasklist.size() == 0||_suspended)) {
+        while (_started && (_tasklist.empty()||_suspended)) {
             _mutex.wait(WAIT_TIMEOUT);//defensive waiting time limit.
         }
         ITask* task = NULL;
@@ -226,16 +226,56 @@ namespace tq{
         return task;
     }
     
+    inline
     void ThreadTaskQueue::LockQueue()
     {
         _mutex.lock();
     }
     
+    inline
     void ThreadTaskQueue::UnlockQueue()
     {
         _mutex.unlock();
     }
+
+    inline
+    void ThreadTaskQueue::FinishTask(ITask* task)
+    {
+        if(task->GetCategory() != NoCategory)
+        {
+            _recyclerMutex.lock();
+            std::map<TaskCategory,RecyclerPair>::iterator it = _recyclers.find(task->GetCategory());
+            if(it!=_recyclers.end())
+            {
+                RecyclerPair pair = it->second;
+                _recyclerMutex.unlock();
+                pair.recycler(task,pair.context);
+                return;
+            }
+            _recyclerMutex.unlock();
+        }
+        delete task;
+
+    }
     
+    void ThreadTaskQueue::SetTaskRecycler(TaskCategory cat, TaskRecycler recycler,void *context)
+    {
+        _recyclerMutex.lock();
+        _recyclers[cat] = {recycler,context};
+        _recyclerMutex.unlock();
+    }
+
+    void ThreadTaskQueue::ClearTaskRecycler(TaskCategory cat)
+    {
+        _recyclerMutex.lock();
+        std::map<TaskCategory,RecyclerPair>::iterator it = _recyclers.find(cat);
+        if(it!=_recyclers.end())
+        {
+            _recyclers.erase(it);
+        }
+        _recyclerMutex.unlock();
+    }
+
     ThreadTaskQueue::~ThreadTaskQueue()
     {
         this->Stop();//Defensive stop.

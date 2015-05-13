@@ -10,15 +10,22 @@
 #define __LibDriveRating_CXX__TQInterface__
 
 namespace tq {
+    typedef unsigned long TaskCategory;
+
+    const TaskCategory NoCategory = 0;
+
     class ITask
     {
     public:
         virtual void Run() = 0;
         virtual void Cancel() = 0;
         virtual bool IsCancelled() const = 0;
-        virtual ~ITask(){};
+        virtual TaskCategory GetCategory() const = 0;
+        virtual ~ITask(){}
     };
     
+    typedef void (*TaskRecycler)(ITask* task,void* context);
+
     class IQueue
     {
     public:
@@ -40,7 +47,11 @@ namespace tq {
         
         virtual void Resume() = 0;
         
-        virtual ~IQueue() {};
+        virtual void SetTaskRecycler(TaskCategory cat, TaskRecycler recycler,void *context){}
+
+        virtual void ClearTaskRecycler(TaskCategory cat){}
+
+        virtual ~IQueue() {}
     };
 }
 

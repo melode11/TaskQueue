@@ -23,6 +23,7 @@ namespace tq
         bool IsCancelled() const;
         
         virtual void Main() = 0;
+        virtual TaskCategory GetCategory() const {return NoCategory;}
     };
 }
 #endif /* defined(__LibDriveRating_CXX__BaseTaskQueue__) */
