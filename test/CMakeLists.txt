@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 2.8.0 FATAL_ERROR)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)
+add_executable(testjobpool TestJobPool.cpp)
+target_link_libraries(testjobpool taskqueue)
+target_include_directories(testjobpool PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../src" "${CMAKE_CURRENT_LIST_DIR}/../threadpp" )

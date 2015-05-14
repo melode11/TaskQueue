@@ -70,6 +70,10 @@ namespace tq
         {
             TaskRecycler recycler;
             void *context;
+            RecyclerPair(TaskRecycler r,void* c):
+                recycler(r),context(c)
+            {
+            }
         };
 
         std::map<TaskCategory,RecyclerPair> _recyclers;

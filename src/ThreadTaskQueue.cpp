@@ -261,7 +261,8 @@ namespace tq{
     void ThreadTaskQueue::SetTaskRecycler(TaskCategory cat, TaskRecycler recycler,void *context)
     {
         _recyclerMutex.lock();
-        _recyclers[cat] = {recycler,context};
+        std::pair<TaskCategory,RecyclerPair> pair(cat, RecyclerPair(recycler,context));
+        _recyclers.insert(pair);
         _recyclerMutex.unlock();
     }
 
