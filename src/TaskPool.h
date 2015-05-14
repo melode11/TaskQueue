@@ -14,6 +14,7 @@ namespace tq
         ~TaskPool();
         TaskType* GetTask(TaskType const& jobPrototype);
         void RecycleTask(TaskType* job);
+        void Purge();
     private:
         threadpp::lock _mutex;
         std::list<TaskType*> _jobs;
@@ -57,15 +58,9 @@ namespace tq
         }
         _mutex.unlock();
     }
-
+    
     template <typename TaskType>
-    TaskPool<TaskType>::TaskPool(unsigned capacity):
-    _capacity(capacity)
-    {
-    }
-
-    template <typename TaskType>
-    TaskPool<TaskType>::~TaskPool()
+    void TaskPool<TaskType>::Purge()
     {
         _mutex.lock();
         if(!_jobs.empty())
@@ -77,6 +72,18 @@ namespace tq
             _jobs.clear();
         }
         _mutex.unlock();
+    }
+
+    template <typename TaskType>
+    TaskPool<TaskType>::TaskPool(unsigned capacity):
+    _capacity(capacity)
+    {
+    }
+
+    template <typename TaskType>
+    TaskPool<TaskType>::~TaskPool()
+    {
+        this->Purge();
     }
 }
 #endif
